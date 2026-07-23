@@ -4,7 +4,7 @@
     ".": {
       "release-type": "php",
       "package-name": "zappzarapp/devtoolbar",
-      "bootstrap-sha": "909b24c6ed13912007788abf217cb39132342ad9",
+      "bootstrap-sha": "347eabde4e5bc6130c725795f37fc1956a43bf35",
       "changelog-sections": [
         {
           "type": "feat",
