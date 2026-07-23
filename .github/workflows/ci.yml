@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  security-analysis:
+    name: Security Analysis (Psalm Taint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Psalm Taint Analysis
+        run: vendor/bin/psalm --taint-analysis
+
+  tests:
+    name: PHP ${{ matrix.php }} Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Security audit
+        run: composer audit --no-dev
+
+      - name: Check code style
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=512M
+
+      - name: Run Psalm
+        if: matrix.php == '8.4'
+        run: vendor/bin/psalm --show-info=false
+
+      - name: Run PHPMD
+        run: vendor/bin/phpmd src text phpmd.xml
+
+      - name: Run Rector
+        run: vendor/bin/rector process --dry-run
+
+      - name: Run tests with coverage
+        run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml --coverage-xml=build/coverage/coverage-xml --log-junit=build/coverage/junit.xml
+
+      - name: Run Deptrac
+        run: vendor/bin/deptrac analyse
+
+      - name: Run Infection
+        run: vendor/bin/infection --threads=4 --coverage=build/coverage --skip-initial-tests --logger-github
+
+      - name: Generate SBOM
+        run: composer sbom
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom-php${{ matrix.php }}
+          path: sbom.json
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  frontend-build:
+    name: Frontend Bundle Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check frontend
+        working-directory: frontend
+        run: pnpm run type-check
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: pnpm run lint
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: pnpm test
+
+      - name: Build bundle
+        working-directory: frontend
+        run: pnpm run build
+
+      - name: Verify bundle output
+        run: |
+          test -f assets/devtoolbar.js || { echo "::error::assets/devtoolbar.js was not produced by the frontend build"; exit 1; }
+          test -s assets/devtoolbar.js || { echo "::error::assets/devtoolbar.js is empty"; exit 1; }
+          echo "Bundle size: $(wc -c < assets/devtoolbar.js) bytes"
+
+      - name: Verify committed bundle is up to date
+        run: |
+          if ! git diff --quiet -- assets/devtoolbar.js; then
+            echo "::error::assets/devtoolbar.js is out of date — rebuild with 'make frontend-build' and commit the result."
+            git --no-pager diff --stat -- assets/devtoolbar.js
+            exit 1
+          fi
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: devtoolbar-bundle
+          path: assets/devtoolbar.js

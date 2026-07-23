@@ -1,0 +1,29 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src"
+        ]
+    },
+    "logs": {
+        "text": "build/infection.log",
+        "summary": "build/infection-summary.log"
+    },
+    // Non-regression ratchet, raised as coverage improves — not an aspiration.
+    // The suite is at ~65% MSI over the full src tree after mutation-hardening
+    // the analyzers (Performance/QueryAnalyzer now ~80%). This floor keeps CI
+    // from regressing; raise it further with the DataCollectors and
+    // TimelineCollector next, where a surviving mutant is a real untested logic
+    // path. 100% MSI (the smaller sibling packages' bar) is not proportionate
+    // for this UI-generating package — much of the remainder is HTML-string
+    // rendering with low mutation-testing value. See
+    // docs/pre-publish-review-2026-07-23.md.
+    "minMsi": 68,
+    "minCoveredMsi": 68,
+    "phpUnit": {
+        "configDir": "."
+    },
+    "mutators": {
+        "@default": true
+    }
+}

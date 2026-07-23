@@ -1,0 +1,24 @@
+deptrac:
+  paths:
+    - ./src
+
+  # TODO: split into proper layers (Config → Guard → DataCollectors → Analyzers
+  # → Renderers → entry-point DevToolbar/Middleware) and add a ruleset enforcing
+  # the dependency direction. The single-layer stub below keeps deptrac runnable
+  # so it can be wired into CI from day one.
+  layers:
+    - name: DevToolbar
+      collectors:
+        - type: classLike
+          value: ^Zappzarapp\\DevToolbar\\.*$
+
+  ruleset:
+    DevToolbar: []
+
+  skip_violations: {}
+
+  formatters:
+    graphviz:
+      hidden_layers: []
+      groups: {}
+      pointToGroups: false
