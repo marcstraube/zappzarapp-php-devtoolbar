@@ -19,19 +19,33 @@ class GitBranchResolverTest extends TestCase
 
     protected function tearDown(): void
     {
-        $head = $this->tmpRepo . '/.git/HEAD';
-        if (is_file($head)) {
-            unlink($head);
+        $this->removeDirectory($this->tmpRepo);
+    }
+
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
         }
 
-        $gitDir = $this->tmpRepo . '/.git';
-        if (is_dir($gitDir)) {
-            rmdir($gitDir);
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry === '.') {
+                continue;
+            }
+
+            if ($entry === '..') {
+                continue;
+            }
+
+            $path = $dir . '/' . $entry;
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+            } else {
+                unlink($path);
+            }
         }
 
-        if (is_dir($this->tmpRepo)) {
-            rmdir($this->tmpRepo);
-        }
+        rmdir($dir);
     }
 
     public function testEnvOverrideTakesPrecedenceOverHeadFile(): void
@@ -88,5 +102,67 @@ class GitBranchResolverTest extends TestCase
         $resolver = new GitBranchResolver($this->tmpRepo, null);
 
         $this->assertSame('main', $resolver->resolve());
+    }
+
+    public function testDiscoverRepoRootReturnsStartDirContainingGitDirectory(): void
+    {
+        $this->assertSame($this->tmpRepo, GitBranchResolver::discoverRepoRoot($this->tmpRepo));
+    }
+
+    public function testDiscoverRepoRootWalksUpFromFrontControllerDirectory(): void
+    {
+        mkdir($this->tmpRepo . '/public');
+
+        $this->assertSame($this->tmpRepo, GitBranchResolver::discoverRepoRoot($this->tmpRepo . '/public'));
+    }
+
+    public function testDiscoverRepoRootWalksUpMultipleLevels(): void
+    {
+        mkdir($this->tmpRepo . '/a/b/c', 0o755, recursive: true);
+
+        $this->assertSame($this->tmpRepo, GitBranchResolver::discoverRepoRoot($this->tmpRepo . '/a/b/c'));
+    }
+
+    public function testDiscoverRepoRootRespectsDepthBound(): void
+    {
+        // Four levels above the start directory — one beyond MAX_WALK_UP_DEPTH.
+        mkdir($this->tmpRepo . '/a/b/c/d', 0o755, recursive: true);
+
+        $this->assertSame(
+            $this->tmpRepo . '/a/b/c/d',
+            GitBranchResolver::discoverRepoRoot($this->tmpRepo . '/a/b/c/d'),
+        );
+    }
+
+    public function testDiscoverRepoRootStopsAtGitFileWithoutClimbingFurther(): void
+    {
+        // Worktree layout: .git is a file (gitdir: pointer) inside a directory
+        // that is itself nested in a repository with a real .git directory.
+        mkdir($this->tmpRepo . '/worktree/public', 0o755, recursive: true);
+        file_put_contents($this->tmpRepo . '/worktree/.git', "gitdir: /somewhere/else\n");
+
+        $this->assertSame(
+            $this->tmpRepo . '/worktree',
+            GitBranchResolver::discoverRepoRoot($this->tmpRepo . '/worktree/public'),
+        );
+
+        // resolve() then yields null (no .git/HEAD file) instead of showing
+        // the branch of the unrelated outer repository.
+        $resolver = new GitBranchResolver($this->tmpRepo . '/worktree', null);
+        $this->assertNull($resolver->resolve());
+    }
+
+    public function testDiscoverRepoRootFallsBackToStartDirWhenNothingFound(): void
+    {
+        $plain = sys_get_temp_dir() . '/devtoolbar-plain-' . uniqid();
+        mkdir($plain . '/a/b', 0o755, recursive: true);
+
+        try {
+            $this->assertSame($plain . '/a/b', GitBranchResolver::discoverRepoRoot($plain . '/a/b'));
+        } finally {
+            rmdir($plain . '/a/b');
+            rmdir($plain . '/a');
+            rmdir($plain);
+        }
     }
 }
