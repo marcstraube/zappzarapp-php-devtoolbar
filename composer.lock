@@ -161,16 +161,16 @@
         },
         {
             "name": "zappzarapp/security",
-            "version": "v1.2.0",
+            "version": "v1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/marcstraube/zappzarapp-php-security.git",
-                "reference": "8fe724829df396688506bb7c7aaef22f20d31e3d"
+                "reference": "61caf4cb6e6b28ca02736a9f4f459bdc1e981098"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/marcstraube/zappzarapp-php-security/zipball/8fe724829df396688506bb7c7aaef22f20d31e3d",
-                "reference": "8fe724829df396688506bb7c7aaef22f20d31e3d",
+                "url": "https://api.github.com/repos/marcstraube/zappzarapp-php-security/zipball/61caf4cb6e6b28ca02736a9f4f459bdc1e981098",
+                "reference": "61caf4cb6e6b28ca02736a9f4f459bdc1e981098",
                 "shasum": ""
             },
             "require": {
@@ -193,6 +193,7 @@
                 "phpmd/phpmd": "^2.15",
                 "phpstan/phpstan": "^2.1",
                 "phpunit/phpunit": "^13.1",
+                "psr/clock": "^1.0",
                 "psr/http-client": "^1.0",
                 "psr/http-factory": "^1.1",
                 "psr/http-server-handler": "^1.0",
@@ -207,6 +208,7 @@
                 "ext-pdo": "For PDO rate limit and CSRF token storage (MySQL, PostgreSQL, SQLite)",
                 "ext-redis": "For Redis rate limit and CSRF token storage (phpredis extension)",
                 "predis/predis": "For Redis rate limit and CSRF token storage (pure PHP client)",
+                "psr/clock": "For deterministic time injection in SessionGuard (PSR-20)",
                 "psr/http-client": "For PSR-18 HTTP client support in PwnedPasswordChecker",
                 "psr/http-factory": "For PSR-17 HTTP factory support in PwnedPasswordChecker",
                 "psr/http-message": "For PSR-7 response analysis in SecurityHeaderAnalyzer",
@@ -214,6 +216,9 @@
                 "psr/http-server-middleware": "For PSR-15 middleware support",
                 "psr/log": "For security event audit logging (PSR-3)"
             },
+            "bin": [
+                "bin/security-scan"
+            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -224,7 +229,11 @@
                     "Zappzarapp\\Security\\Cookie\\": "src/Cookie/",
                     "Zappzarapp\\Security\\Headers\\": "src/Headers/",
                     "Zappzarapp\\Security\\Logging\\": "src/Logging/",
+                    "Zappzarapp\\Security\\Scanner\\": "src/Scanner/",
+                    "Zappzarapp\\Security\\Secrets\\": "src/Secrets/",
+                    "Zappzarapp\\Security\\Session\\": "src/Session/",
                     "Zappzarapp\\Security\\Password\\": "src/Password/",
+                    "Zappzarapp\\Security\\Encryption\\": "src/Encryption/",
                     "Zappzarapp\\Security\\Middleware\\": "src/Middleware/",
                     "Zappzarapp\\Security\\RateLimiting\\": "src/RateLimiting/",
                     "Zappzarapp\\Security\\Sanitization\\": "src/Sanitization/"
@@ -273,7 +282,7 @@
                     "type": "ko_fi"
                 }
             ],
-            "time": "2026-06-10T12:31:29+00:00"
+            "time": "2026-07-27T11:55:59+00:00"
         }
     ],
     "packages-dev": [
@@ -2007,16 +2016,16 @@
         },
         {
             "name": "deptrac/deptrac",
-            "version": "4.7.0",
+            "version": "4.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/deptrac/deptrac.git",
-                "reference": "ef6daf9cef2aae88366269f7d65d299ed5cb6ab7"
+                "reference": "de3303ae1e280b1e58552fef496074b4ee5b143b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/deptrac/deptrac/zipball/ef6daf9cef2aae88366269f7d65d299ed5cb6ab7",
-                "reference": "ef6daf9cef2aae88366269f7d65d299ed5cb6ab7",
+                "url": "https://api.github.com/repos/deptrac/deptrac/zipball/de3303ae1e280b1e58552fef496074b4ee5b143b",
+                "reference": "de3303ae1e280b1e58552fef496074b4ee5b143b",
                 "shasum": ""
             },
             "require": {
@@ -2086,9 +2095,9 @@
             ],
             "support": {
                 "issues": "https://github.com/deptrac/deptrac/issues",
-                "source": "https://github.com/deptrac/deptrac/tree/4.7.0"
+                "source": "https://github.com/deptrac/deptrac/tree/4.7.1"
             },
-            "time": "2026-07-21T06:03:25+00:00"
+            "time": "2026-07-23T20:41:37+00:00"
         },
         {
             "name": "dnoegel/php-xdg-base-dir",
@@ -2476,16 +2485,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.95.15",
+            "version": "v3.95.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "3e47e5d50046f87e3244acde2fe655d1a3b72555"
+                "reference": "0ee88422118f3cc59c8c3def222ba7f1493b6d5b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/3e47e5d50046f87e3244acde2fe655d1a3b72555",
-                "reference": "3e47e5d50046f87e3244acde2fe655d1a3b72555",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/0ee88422118f3cc59c8c3def222ba7f1493b6d5b",
+                "reference": "0ee88422118f3cc59c8c3def222ba7f1493b6d5b",
                 "shasum": ""
             },
             "require": {
@@ -2525,10 +2534,10 @@
                 "php-coveralls/php-coveralls": "^2.9.1",
                 "php-cs-fixer/phpunit-constraint-isidenticalstring": "^1.8",
                 "php-cs-fixer/phpunit-constraint-xmlmatchesxsd": "^1.8",
-                "phpunit/phpunit": "^9.6.35 || ^10.5.64 || ^11.5.56 || ^12.5.31",
+                "phpunit/phpunit": "^9.6.35 || ^10.5.64 || ^11.5.56 || ^12.5.31 || ^13.0.6",
                 "symfony/polyfill-php85": "^1.38",
-                "symfony/var-dumper": "^5.4.48 || ^6.4.36 || ^7.4.8 || ^8.1.0",
-                "symfony/yaml": "^5.4.53 || ^6.4.41 || ^7.4.13 || ^8.1.0"
+                "symfony/var-dumper": "^5.4.48 || ^6.4.36 || ^7.4.8 || ^8.1.1",
+                "symfony/yaml": "^5.4.53 || ^6.4.41 || ^7.4.13 || ^8.1.1"
             },
             "suggest": {
                 "ext-dom": "For handling output formats in XML",
@@ -2569,7 +2578,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.95.15"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.95.17"
             },
             "funding": [
                 {
@@ -2577,7 +2586,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-15T09:51:47+00:00"
+            "time": "2026-07-24T13:54:39+00:00"
         },
         {
             "name": "infection/abstract-testframework-adapter",
@@ -4425,11 +4434,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.2.5",
+            "version": "2.2.6",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/909c1e5fef7989ac0d0c1c5c42e32a5c4f6198a0",
-                "reference": "909c1e5fef7989ac0d0c1c5c42e32a5c4f6198a0",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/a6e9b5a9420f6109c091e87d82683bd1a80b87ed",
+                "reference": "a6e9b5a9420f6109c091e87d82683bd1a80b87ed",
                 "shasum": ""
             },
             "require": {
@@ -4485,7 +4494,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-05T06:31:06+00:00"
+            "time": "2026-07-26T21:22:49+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -5748,21 +5757,21 @@
         },
         {
             "name": "rector/rector",
-            "version": "2.5.7",
+            "version": "2.5.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rectorphp/rector.git",
-                "reference": "ba22f8c087848278fed6b4910d4cf1108096d8d3"
+                "reference": "861c77fd2a6d45317a401f4e0b617f947e8b6f96"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rectorphp/rector/zipball/ba22f8c087848278fed6b4910d4cf1108096d8d3",
-                "reference": "ba22f8c087848278fed6b4910d4cf1108096d8d3",
+                "url": "https://api.github.com/repos/rectorphp/rector/zipball/861c77fd2a6d45317a401f4e0b617f947e8b6f96",
+                "reference": "861c77fd2a6d45317a401f4e0b617f947e8b6f96",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.4|^8.0",
-                "phpstan/phpstan": "^2.2.2"
+                "phpstan/phpstan": "^2.2.6"
             },
             "conflict": {
                 "rector/rector-doctrine": "*",
@@ -5796,7 +5805,7 @@
             ],
             "support": {
                 "issues": "https://github.com/rectorphp/rector/issues",
-                "source": "https://github.com/rectorphp/rector/tree/2.5.7"
+                "source": "https://github.com/rectorphp/rector/tree/2.5.8"
             },
             "funding": [
                 {
@@ -5804,7 +5813,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-13T15:24:18+00:00"
+            "time": "2026-07-27T06:19:16+00:00"
         },
         {
             "name": "revolt/event-loop",
