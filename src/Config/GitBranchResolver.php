@@ -12,11 +12,21 @@ use Throwable;
  * Reads .git/HEAD directly (file system only, no shell_exec) and honors
  * an optional environment override useful for CI/CD. Constructor takes
  * the values explicitly so tests can drive both inputs without touching
- * the global environment; {@see fromGlobals} wires the production values.
+ * the global environment; {@see fromGlobals} wires the production values
+ * and discovers the repository root by walking up from getcwd() — under
+ * PHP-FPM the working directory is the front controller directory
+ * (typically public/), one level below the repository root.
  */
 final readonly class GitBranchResolver
 {
     private const string HEAD_REF_PREFIX = 'ref: refs/heads/';
+
+    /**
+     * How many parent directories {@see discoverRepoRoot} may climb above
+     * the start directory. Bounded so a deployment without .git cannot pick
+     * up an unrelated repository further up (e.g. a versioned /var/www).
+     */
+    private const int MAX_WALK_UP_DEPTH = 3;
 
     public function __construct(
         private string $repoRoot,
@@ -29,9 +39,52 @@ final readonly class GitBranchResolver
         $env = getenv('GIT_BRANCH');
 
         return new self(
-            repoRoot: getcwd() ?: '.',
+            repoRoot: self::discoverRepoRoot(getcwd() ?: '.'),
             envOverride: ($env !== false && $env !== '') ? $env : null,
         );
+    }
+
+    /**
+     * Walks up from $startDir to the first directory containing a .git entry
+     * and returns it; falls back to $startDir when none is found within
+     * {@see MAX_WALK_UP_DEPTH} levels. The walk stops at any .git entry —
+     * including a .git *file* (worktree/submodule pointer): resolve() then
+     * yields null rather than climbing past it into an unrelated parent
+     * repository.
+     *
+     * @internal Public only so tests can drive it with a temp directory.
+     */
+    public static function discoverRepoRoot(string $startDir): string
+    {
+        $dir = $startDir;
+        for ($depth = 0; $depth <= self::MAX_WALK_UP_DEPTH; $depth++) {
+            if (self::hasGitEntry($dir)) {
+                return $dir;
+            }
+
+            $parent = dirname($dir);
+            if ($parent === $dir) {
+                break; // Reached the filesystem root.
+            }
+
+            $dir = $parent;
+        }
+
+        return $startDir;
+    }
+
+    private static function hasGitEntry(string $dir): bool
+    {
+        // Same rationale as the catch around file_get_contents() below:
+        // file_exists() emits E_WARNING when the walk crosses an open_basedir
+        // boundary, and consumer error handlers may convert that to an
+        // ErrorException — the walk must stay defensive exactly there.
+        try {
+            return file_exists($dir . '/.git');
+        // @phpstan-ignore catch.neverThrown (consumer error handlers may convert E_WARNING to ErrorException)
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**
