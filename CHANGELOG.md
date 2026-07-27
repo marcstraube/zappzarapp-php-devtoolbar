@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1](https://github.com/marcstraube/zappzarapp-php-devtoolbar/compare/v1.0.0...v1.0.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **config:** resolve git branch under PHP-FPM by walking up to the repo root ([#5](https://github.com/marcstraube/zappzarapp-php-devtoolbar/issues/5)) ([c1b9948](https://github.com/marcstraube/zappzarapp-php-devtoolbar/commit/c1b994861955cc5fb91cb9b15c2acf9fe27debc6)), closes [#4](https://github.com/marcstraube/zappzarapp-php-devtoolbar/issues/4)
+
 ## [1.0.0] - 2026-07-23
 
 Initial release, extracted from
