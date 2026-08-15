@@ -31,7 +31,6 @@
 
     /* Path aliases — tests inherited from the main repo import via
        @backend/DevToolbar/...; vitest.config.ts mirrors this mapping */
-    "baseUrl": ".",
     "paths": {
       "@backend/DevToolbar": ["./index.ts"],
       "@backend/DevToolbar/*": ["./*"]
