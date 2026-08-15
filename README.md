@@ -1,5 +1,11 @@
 # ⚡ zappzarapp/devtoolbar
 
+[![Latest Version](https://img.shields.io/packagist/v/zappzarapp/devtoolbar.svg)](https://packagist.org/packages/zappzarapp/devtoolbar)
+[![PHP Version](https://img.shields.io/packagist/php-v/zappzarapp/devtoolbar.svg)](https://packagist.org/packages/zappzarapp/devtoolbar)
+[![License](https://img.shields.io/packagist/l/zappzarapp/devtoolbar.svg)](https://packagist.org/packages/zappzarapp/devtoolbar)
+[![CI](https://github.com/marcstraube/zappzarapp-php-devtoolbar/actions/workflows/ci.yml/badge.svg)](https://github.com/marcstraube/zappzarapp-php-devtoolbar/actions/workflows/ci.yml)
+[![Socket Badge](https://badge.socket.dev/composer/package/zappzarapp/devtoolbar)](https://socket.dev/composer/package/zappzarapp/devtoolbar)
+
 In-app developer toolbar for PHP applications. Renders a mini-bar overlay with
 collectors for queries, HTTP requests, cache operations, exceptions, timeline
 phases, and request history, with N+1 detection and configurable performance
