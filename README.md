@@ -59,12 +59,18 @@ them with `isEnabled()` only to avoid the output-buffer overhead in production.
 unless a development environment is proven. The decision, in order:
 
 1. **`ENABLE_DEV_TOOLBAR`** — an explicit on/off switch. `true` (any case) or
-   `1` enables; anything else, including typos, disables.
+   `1` enables; anything else, including typos, disables. When set, it decides
+   **alone** — the environment variables below are not consulted. This is the
+   one deliberate override of the environment gate (e.g. to enable the toolbar
+   on a staging system running with production-parity environment values), so
+   **pin it to `false` in production deployments**.
 2. Otherwise every set one of **`APP_ENV`**, **`ENV`** and **`ZAPPZARAPP_ENV`**
    must equal one of `dev`, `development`, `local`, `test`, `testing`
    (case-insensitive), and at least one must be set. Conflicts fail closed: a
    single non-development value disables the toolbar regardless of the others.
-3. A missing or unrecognized environment is treated as production → disabled.
+3. There is no list of "production" values: anything not in the development
+   list above — `production`, `prod`, `staging`, typos, anything unknown — as
+   well as a missing environment counts as production → disabled.
 
 The guard also disables under the CLI SAPI and for AJAX requests. Values are
 read via `getenv()` with an `$_ENV` / `$_SERVER` fallback, so PHP-FPM setups
