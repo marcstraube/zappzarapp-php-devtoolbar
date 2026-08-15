@@ -91,7 +91,9 @@ final readonly class GitBranchResolver
     }
 
     /**
-     * @return string|null Branch name, or null for detached HEAD / non-git directory
+     * @return string|null Branch name, "detached @ <short-hash>" for a
+     *                     detached HEAD, or null for a non-git directory /
+     *                     unreadable or unrecognized HEAD
      */
     public function resolve(): ?string
     {
@@ -110,11 +112,28 @@ final readonly class GitBranchResolver
         }
 
         if (!str_starts_with($contents, self::HEAD_REF_PREFIX)) {
-            // Detached HEAD: contents is a commit hash, not a branch reference.
-            return null;
+            return $this->formatDetachedHead($contents);
         }
 
         return trim(substr($contents, strlen(self::HEAD_REF_PREFIX)));
+    }
+
+    /**
+     * Format a detached HEAD as "detached @ <short-hash>".
+     *
+     * A detached HEAD file holds a bare commit hash (40 hex chars, or 64
+     * in a SHA-256 repository). Anything else — a symref to a non-branch
+     * ref, truncated or corrupt content — yields null, so no unvalidated
+     * file content ever reaches the label.
+     */
+    private function formatDetachedHead(string $contents): ?string
+    {
+        $hash = trim($contents);
+        if (preg_match('/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/', $hash) !== 1) {
+            return null;
+        }
+
+        return 'detached @ ' . substr($hash, 0, 7);
     }
 
     /**

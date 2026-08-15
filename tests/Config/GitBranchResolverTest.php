@@ -64,12 +64,33 @@ class GitBranchResolverTest extends TestCase
         $this->assertSame('develop', $resolver->resolve());
     }
 
-    public function testReturnsNullForDetachedHead(): void
+    public function testFormatsDetachedHeadAsShortHash(): void
     {
-        file_put_contents($this->tmpRepo . '/.git/HEAD', "abc123def456\n");
+        file_put_contents($this->tmpRepo . '/.git/HEAD', "abc123def4567890abc123def4567890abc123de\n");
         $resolver = new GitBranchResolver($this->tmpRepo, null);
 
-        $this->assertNull($resolver->resolve());
+        $this->assertSame('detached @ abc123d', $resolver->resolve());
+    }
+
+    public function testFormatsDetachedSha256HeadAsShortHash(): void
+    {
+        file_put_contents($this->tmpRepo . '/.git/HEAD', str_repeat('ab12', 16) . "\n");
+        $resolver = new GitBranchResolver($this->tmpRepo, null);
+
+        $this->assertSame('detached @ ab12ab1', $resolver->resolve());
+    }
+
+    public function testReturnsNullForCorruptHeadContent(): void
+    {
+        // Neither a branch symref nor a plausible commit hash — e.g. a
+        // truncated hash or a symref to a non-branch ref must not leak
+        // into the label.
+        foreach (["abc123def456\n", "ref: refs/tags/v1.0.0\n", "garbage content\n"] as $contents) {
+            file_put_contents($this->tmpRepo . '/.git/HEAD', $contents);
+            $resolver = new GitBranchResolver($this->tmpRepo, null);
+
+            $this->assertNull($resolver->resolve(), 'HEAD content: ' . trim($contents));
+        }
     }
 
     public function testReturnsNullWhenHeadFileMissing(): void
@@ -180,16 +201,16 @@ class GitBranchResolverTest extends TestCase
         $this->assertSame('main', $resolver->resolve());
     }
 
-    public function testReturnsNullForDetachedHeadInWorktree(): void
+    public function testFormatsDetachedHeadInWorktree(): void
     {
         mkdir($this->tmpRepo . '/.git/worktrees/wt', 0o755, recursive: true);
-        file_put_contents($this->tmpRepo . '/.git/worktrees/wt/HEAD', "abc123def456\n");
+        file_put_contents($this->tmpRepo . '/.git/worktrees/wt/HEAD', "abc123def4567890abc123def4567890abc123de\n");
         mkdir($this->tmpRepo . '/checkout');
         file_put_contents($this->tmpRepo . '/checkout/.git', 'gitdir: ' . $this->tmpRepo . "/.git/worktrees/wt\n");
 
         $resolver = new GitBranchResolver($this->tmpRepo . '/checkout', null);
 
-        $this->assertNull($resolver->resolve());
+        $this->assertSame('detached @ abc123d', $resolver->resolve());
     }
 
     public function testReturnsNullForMalformedGitFile(): void
