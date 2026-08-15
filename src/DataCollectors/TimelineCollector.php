@@ -188,8 +188,12 @@ class TimelineCollector implements CollectorInterface
     /**
      * Group events by category and compute per-category durations
      *
-     * @return array{0: array<string, array{time: float, events: array<int, array<string, mixed>>}>, 1: float}
-     *               Tuple of [category data keyed by category, sum of measured work time]
+     * @return array{0: array<string|int, array{time: float, events: array<int, array<string, mixed>>}>, 1: float}
+     *               Tuple of [category data keyed by category, sum of measured work
+     *               time]. Keys are string|int, not string: categories are
+     *               consumer-supplied via addEvent(), and PHP stores a numeric
+     *               string key (e.g. '404') as int — which is why the ucfirst()
+     *               call above must keep its (string) cast.
      */
     private function aggregateByCategory(): array
     {
