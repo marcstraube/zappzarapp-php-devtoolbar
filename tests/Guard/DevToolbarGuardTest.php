@@ -31,7 +31,7 @@ class DevToolbarGuardTest extends TestCase
 
         // Snapshot and clear the variables the guard consults so the
         // host environment cannot leak into (or out of) these tests.
-        foreach (['APP_ENV', 'ENV', 'ENABLE_DEV_TOOLBAR'] as $key) {
+        foreach (['APP_ENV', 'ENV', 'ZAPPZARAPP_ENV', 'ENABLE_DEV_TOOLBAR'] as $key) {
             $this->envBackup[$key] = getenv($key);
             putenv($key);
             unset($_ENV[$key], $_SERVER[$key]);
@@ -92,9 +92,19 @@ class DevToolbarGuardTest extends TestCase
             'env=development'                  => [['ENV' => 'development'], true],
             'env=local'                        => [['ENV' => 'local'], true],
             'env=production'                   => [['ENV' => 'production'], false],
-            // APP_ENV wins over ENV when both are set.
-            'app_env dev beats env prod'       => [['APP_ENV' => 'development', 'ENV' => 'production'], true],
-            'app_env prod beats env dev'       => [['APP_ENV' => 'production', 'ENV' => 'development'], false],
+
+            // ZAPPZARAPP_ENV is the zappzarapp ecosystem's own variable.
+            'zappzarapp_env=development'       => [['ZAPPZARAPP_ENV' => 'development'], true],
+            'zappzarapp_env=production'        => [['ZAPPZARAPP_ENV' => 'production'], false],
+
+            // Conflicts fail closed: any set non-dev value wins, in every
+            // direction — never first-found-wins.
+            'env prod beats app_env dev'         => [['APP_ENV' => 'development', 'ENV' => 'production'], false],
+            'app_env prod beats env dev'         => [['APP_ENV' => 'production', 'ENV' => 'development'], false],
+            'zappzarapp prod beats app_env dev'  => [['APP_ENV' => 'development', 'ZAPPZARAPP_ENV' => 'production'], false],
+            'app_env prod beats zappzarapp dev'  => [['APP_ENV' => 'production', 'ZAPPZARAPP_ENV' => 'development'], false],
+            'staging beats dev (unknown → prod)' => [['APP_ENV' => 'development', 'ENV' => 'staging'], false],
+            'all dev agree'                      => [['APP_ENV' => 'dev', 'ENV' => 'local', 'ZAPPZARAPP_ENV' => 'development'], true],
         ];
     }
 

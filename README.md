@@ -60,8 +60,10 @@ unless a development environment is proven. The decision, in order:
 
 1. **`ENABLE_DEV_TOOLBAR`** — an explicit on/off switch. `true` (any case) or
    `1` enables; anything else, including typos, disables.
-2. Otherwise the first set of **`APP_ENV`** then **`ENV`** must equal one of
-   `dev`, `development`, `local`, `test`, `testing` (case-insensitive).
+2. Otherwise every set one of **`APP_ENV`**, **`ENV`** and **`ZAPPZARAPP_ENV`**
+   must equal one of `dev`, `development`, `local`, `test`, `testing`
+   (case-insensitive), and at least one must be set. Conflicts fail closed: a
+   single non-development value disables the toolbar regardless of the others.
 3. A missing or unrecognized environment is treated as production → disabled.
 
 The guard also disables under the CLI SAPI and for AJAX requests. Values are

@@ -22,11 +22,13 @@ final class EnvironmentGuard implements GuardInterface
     private const array DEV_ENVIRONMENTS = ['dev', 'development', 'local', 'test', 'testing'];
 
     /**
-     * Environment variables that name the current environment, in
-     * precedence order. APP_ENV is the Symfony/Laravel convention; ENV is
-     * the generic fallback several setups use. The first one set decides.
+     * Environment variables that name the current environment. APP_ENV is
+     * the Symfony/Laravel convention, ENV the generic fallback several
+     * setups use, ZAPPZARAPP_ENV the zappzarapp ecosystem's own variable.
+     * All set variables are consulted; a single non-development value
+     * disables the toolbar regardless of the others.
      */
-    private const array ENVIRONMENT_VARS = ['APP_ENV', 'ENV'];
+    private const array ENVIRONMENT_VARS = ['APP_ENV', 'ENV', 'ZAPPZARAPP_ENV'];
 
     public function isEnabled(): bool
     {
@@ -56,9 +58,12 @@ final class EnvironmentGuard implements GuardInterface
      *   1. ENABLE_DEV_TOOLBAR, when set, is an explicit on/off switch.
      *      Only the literal 'true' (any case) or '1' enables; anything
      *      else — including typos — disables.
-     *   2. Otherwise the first set ENVIRONMENT_VARS value must match a
-     *      known development value. A missing or unrecognized environment
-     *      is treated as production.
+     *   2. Otherwise every set ENVIRONMENT_VARS value must match a known
+     *      development value, and at least one must be set. Any set value
+     *      that is not a development value counts as production and wins,
+     *      so a leftover APP_ENV=development cannot enable the toolbar
+     *      while ZAPPZARAPP_ENV=production is set. A missing or
+     *      unrecognized environment is treated as production.
      */
     private function isDevEnvironment(): bool
     {
@@ -69,14 +74,21 @@ final class EnvironmentGuard implements GuardInterface
             return $normalized === 'true' || $normalized === '1';
         }
 
+        $sawDevelopment = false;
         foreach (self::ENVIRONMENT_VARS as $name) {
             $value = $this->env($name);
-            if ($value !== null) {
-                return in_array(strtolower($value), self::DEV_ENVIRONMENTS, true);
+            if ($value === null) {
+                continue;
             }
+
+            if (!in_array(strtolower($value), self::DEV_ENVIRONMENTS, true)) {
+                return false;
+            }
+
+            $sawDevelopment = true;
         }
 
-        return false;
+        return $sawDevelopment;
     }
 
     /**
