@@ -9,8 +9,9 @@ use Throwable;
 /**
  * Resolves the current git branch without invoking the shell.
  *
- * Reads .git/HEAD directly (file system only, no shell_exec) and honors
- * an optional environment override useful for CI/CD. Constructor takes
+ * Reads .git/HEAD directly (file system only, no shell_exec), following a
+ * worktree/submodule gitdir: pointer file one step, and honors an optional
+ * environment override useful for CI/CD. Constructor takes
  * the values explicitly so tests can drive both inputs without touching
  * the global environment; {@see fromGlobals} wires the production values
  * and discovers the repository root by walking up from getcwd() — under
@@ -20,6 +21,8 @@ use Throwable;
 final readonly class GitBranchResolver
 {
     private const string HEAD_REF_PREFIX = 'ref: refs/heads/';
+
+    private const string GITDIR_PREFIX = 'gitdir: ';
 
     /**
      * How many parent directories {@see discoverRepoRoot} may climb above
@@ -49,8 +52,8 @@ final readonly class GitBranchResolver
      * and returns it; falls back to $startDir when none is found within
      * {@see MAX_WALK_UP_DEPTH} levels. The walk stops at any .git entry —
      * including a .git *file* (worktree/submodule pointer): resolve() then
-     * yields null rather than climbing past it into an unrelated parent
-     * repository.
+     * follows the gitdir: pointer one step rather than climbing past it
+     * into an unrelated parent repository.
      *
      * @internal Public only so tests can drive it with a temp directory.
      */
@@ -96,23 +99,13 @@ final readonly class GitBranchResolver
             return $this->envOverride;
         }
 
-        $headPath = $this->repoRoot . '/.git/HEAD';
-        if (!is_file($headPath) || !is_readable($headPath)) {
+        $gitDir = $this->gitDir();
+        if ($gitDir === null) {
             return null;
         }
 
-        // Not dead code: file_get_contents() emits E_WARNING on a read failure
-        // (e.g. a permission/deletion race after the is_readable() check), and
-        // consumers may install error handlers that turn warnings into
-        // ErrorException — without the catch that would break the page render.
-        try {
-            $contents = file_get_contents($headPath);
-        // @phpstan-ignore catch.neverThrown (consumer error handlers may convert E_WARNING to ErrorException)
-        } catch (Throwable) {
-            return null;
-        }
-
-        if ($contents === false) {
+        $contents = $this->readFile($gitDir . '/HEAD');
+        if ($contents === null) {
             return null;
         }
 
@@ -122,5 +115,75 @@ final readonly class GitBranchResolver
         }
 
         return trim(substr($contents, strlen(self::HEAD_REF_PREFIX)));
+    }
+
+    /**
+     * Locate the directory holding this checkout's HEAD file.
+     *
+     * Normally that is .git itself. For a worktree or submodule, .git is a
+     * file whose single "gitdir: <path>" line names the real git directory
+     * (worktree: <repo>/.git/worktrees/<name>; submodule: a path that may
+     * be relative to the directory containing the .git file). The pointer
+     * is followed exactly once — HEAD is read directly from the target, so
+     * a crafted chain of pointer files cannot send the resolver on a walk.
+     */
+    private function gitDir(): ?string
+    {
+        $gitEntry = $this->repoRoot . '/.git';
+        if (is_dir($gitEntry)) {
+            return $gitEntry;
+        }
+
+        $contents = $this->readFile($gitEntry);
+        if ($contents === null || !str_starts_with($contents, self::GITDIR_PREFIX)) {
+            return null;
+        }
+
+        $line   = explode("\n", substr($contents, strlen(self::GITDIR_PREFIX)), 2)[0];
+        $target = trim($line);
+        if ($target === '') {
+            return null;
+        }
+
+        // A relative gitdir (the submodule layout) is resolved against the
+        // directory containing the .git file, per gitrepository-layout(5).
+        if (!str_starts_with($target, '/')) {
+            return $this->repoRoot . '/' . $target;
+        }
+
+        return $target;
+    }
+
+    /**
+     * Read a file, returning null on any failure.
+     *
+     * The file checks and file_get_contents() emit E_WARNING on failure
+     * (open_basedir boundary, permission/deletion race after the
+     * is_readable() check) — a gitdir: target is especially likely to sit
+     * outside open_basedir (the main repository of a worktree). The no-op
+     * error handler both keeps that warning out of the page when
+     * display_errors is on and sidesteps consumer error handlers that
+     * would convert it to an ErrorException. The catch stays for anything
+     * a handler cannot intercept (e.g. ValueError for a path containing a
+     * null byte).
+     */
+    private function readFile(string $path): ?string
+    {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            if (!is_file($path) || !is_readable($path)) {
+                return null;
+            }
+
+            $contents = file_get_contents($path);
+        // @phpstan-ignore catch.neverThrown (ValueError for null bytes in the path is not modeled)
+        } catch (Throwable) {
+            return null;
+        } finally {
+            restore_error_handler();
+        }
+
+        return $contents === false ? null : $contents;
     }
 }
