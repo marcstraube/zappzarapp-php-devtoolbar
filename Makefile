@@ -1,7 +1,8 @@
 .PHONY: help analyse check check-full clean cs-check cs-fix deptrac docs frontend-build frontend-install frontend-test hooks infection install install-all md-check md-fix md-lint phpmd psalm psalm-taint rector rector-fix sbom security test test-coverage
 
-# Use php84 for compatibility with xdebug
-PHP ?= php84
+# PHP interpreter: first match wins — Arch legacy naming (php84), Debian/Ubuntu
+# versioned naming (php8.4), then the plain binary. Override with `make PHP=...`.
+PHP ?= $(shell command -v php84 >/dev/null 2>&1 && echo php84 || (command -v php8.4 >/dev/null 2>&1 && echo php8.4 || echo php))
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -34,7 +35,7 @@ hooks: ## Install git hooks (CaptainHook)
 	vendor/bin/captainhook install --force
 
 infection: ## Run mutation testing
-	@mkdir -p build/bin && ln -sf /usr/bin/php84 build/bin/php
+	@mkdir -p build/bin && ln -sf "$$(command -v $(PHP))" build/bin/php
 	PATH="$(CURDIR)/build/bin:$(PATH)" PCOV_ENABLED=1 $(PHP) -d extension=pcov.so -d pcov.enabled=1 vendor/bin/infection --threads=4 --initial-tests-php-options="-d extension=pcov.so -d pcov.enabled=1"
 
 install: ## Install PHP dependencies via $(PHP) (so ext-sodium etc. resolve correctly)
