@@ -146,9 +146,85 @@ class GitBranchResolverTest extends TestCase
             GitBranchResolver::discoverRepoRoot($this->tmpRepo . '/worktree/public'),
         );
 
-        // resolve() then yields null (no .git/HEAD file) instead of showing
-        // the branch of the unrelated outer repository.
+        // resolve() follows the pointer, finds no HEAD there, and yields null
+        // instead of showing the branch of the unrelated outer repository.
         $resolver = new GitBranchResolver($this->tmpRepo . '/worktree', null);
+        $this->assertNull($resolver->resolve());
+    }
+
+    public function testFollowsAbsoluteGitdirPointerOfWorktree(): void
+    {
+        // Linked worktree: .git is a file whose absolute gitdir target holds
+        // HEAD directly (main repo's .git/worktrees/<name>).
+        mkdir($this->tmpRepo . '/.git/worktrees/wt', 0o755, recursive: true);
+        file_put_contents($this->tmpRepo . '/.git/worktrees/wt/HEAD', "ref: refs/heads/feature/wt\n");
+        mkdir($this->tmpRepo . '/checkout');
+        file_put_contents($this->tmpRepo . '/checkout/.git', 'gitdir: ' . $this->tmpRepo . "/.git/worktrees/wt\n");
+
+        $resolver = new GitBranchResolver($this->tmpRepo . '/checkout', null);
+
+        $this->assertSame('feature/wt', $resolver->resolve());
+    }
+
+    public function testFollowsRelativeGitdirPointerOfSubmodule(): void
+    {
+        // Submodule layout: the gitdir target is relative to the directory
+        // containing the .git file.
+        mkdir($this->tmpRepo . '/.git/modules/lib', 0o755, recursive: true);
+        file_put_contents($this->tmpRepo . '/.git/modules/lib/HEAD', "ref: refs/heads/main\n");
+        mkdir($this->tmpRepo . '/lib');
+        file_put_contents($this->tmpRepo . '/lib/.git', "gitdir: ../.git/modules/lib\n");
+
+        $resolver = new GitBranchResolver($this->tmpRepo . '/lib', null);
+
+        $this->assertSame('main', $resolver->resolve());
+    }
+
+    public function testReturnsNullForDetachedHeadInWorktree(): void
+    {
+        mkdir($this->tmpRepo . '/.git/worktrees/wt', 0o755, recursive: true);
+        file_put_contents($this->tmpRepo . '/.git/worktrees/wt/HEAD', "abc123def456\n");
+        mkdir($this->tmpRepo . '/checkout');
+        file_put_contents($this->tmpRepo . '/checkout/.git', 'gitdir: ' . $this->tmpRepo . "/.git/worktrees/wt\n");
+
+        $resolver = new GitBranchResolver($this->tmpRepo . '/checkout', null);
+
+        $this->assertNull($resolver->resolve());
+    }
+
+    public function testReturnsNullForMalformedGitFile(): void
+    {
+        mkdir($this->tmpRepo . '/checkout');
+        file_put_contents($this->tmpRepo . '/checkout/.git', "not a pointer\n");
+
+        $resolver = new GitBranchResolver($this->tmpRepo . '/checkout', null);
+
+        $this->assertNull($resolver->resolve());
+    }
+
+    public function testReturnsNullForEmptyGitdirTarget(): void
+    {
+        mkdir($this->tmpRepo . '/checkout');
+        file_put_contents($this->tmpRepo . '/checkout/.git', "gitdir:   \n");
+
+        $resolver = new GitBranchResolver($this->tmpRepo . '/checkout', null);
+
+        $this->assertNull($resolver->resolve());
+    }
+
+    public function testDoesNotFollowGitdirPointerChains(): void
+    {
+        // First pointer target is legitimate but contains no HEAD — instead
+        // its HEAD is itself a pointer file. The resolver must read that
+        // file as HEAD content (no ref: prefix → null), never follow it.
+        mkdir($this->tmpRepo . '/hop', 0o755, recursive: true);
+        file_put_contents($this->tmpRepo . '/hop/HEAD', 'gitdir: ' . $this->tmpRepo . "/.git\n");
+        file_put_contents($this->tmpRepo . '/.git/HEAD', "ref: refs/heads/should-not-appear\n");
+        mkdir($this->tmpRepo . '/checkout');
+        file_put_contents($this->tmpRepo . '/checkout/.git', 'gitdir: ' . $this->tmpRepo . "/hop\n");
+
+        $resolver = new GitBranchResolver($this->tmpRepo . '/checkout', null);
+
         $this->assertNull($resolver->resolve());
     }
 
