@@ -26,7 +26,7 @@ final readonly class MiniBarConfig
      * @param list<MiniBarLabel>          $labels        Active labels in display order
      * @param array<string, string>       $branchColors  Branch type → hex color (always includes defaults)
      * @param array<string, int>|null     $thresholds    Custom performance thresholds; null = use analyzer defaults
-     * @param string|null                 $gitBranch     Resolved branch name; null when not on a branch
+     * @param string|null                 $gitBranch     Resolved branch name or "detached @ <short-hash>"; null when unresolvable
      */
     public function __construct(
         public array $labels,
