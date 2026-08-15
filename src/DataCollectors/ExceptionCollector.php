@@ -80,7 +80,7 @@ class ExceptionCollector implements CollectorInterface
         return [
             'exceptions'      => $this->exceptions,
             'count'           => count($this->exceptions),
-            'handled_count'   => count(array_filter($this->exceptions, fn(array $e) => $e['handled'])),
+            'handled_count'   => count(array_filter($this->exceptions, fn(array $e): bool => $e['handled'] === true)),
             'unhandled_count' => count(array_filter($this->exceptions, fn(array $e): bool => !$e['handled'])),
         ];
     }
