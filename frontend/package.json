@@ -18,13 +18,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
-    "@types/node": "^26.4.1",
-    "@typescript-eslint/eslint-plugin": "^8.69.0",
-    "@typescript-eslint/parser": "^8.69.0",
+    "@types/node": "^26.5.1",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
     "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "^0.28.2",
-    "eslint": "^10.9.1",
-    "happy-dom": "^20.14.0",
+    "eslint": "^10.10.0",
+    "happy-dom": "^20.14.3",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11"
